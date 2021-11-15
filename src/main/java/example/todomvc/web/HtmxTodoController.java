@@ -50,6 +50,7 @@ class HtmxTodoController {
 	Flux<Rendering> htmxIndex(Model model, @RequestParam Optional<String> filter) {
 
 		template.prepareForm(model, filter);
+		model.addAttribute("action", "true");
 
 		return Flux.just(Rendering.view("index :: todos").model(model.asMap()).build(),
 				Rendering.view("index :: foot").model(model.asMap()).build());
@@ -70,6 +71,8 @@ class HtmxTodoController {
 			Model model) {
 
 		template.saveForm(form, model, filter);
+		model.addAttribute("form", new TodoForm(""));
+		model.addAttribute("action", "beforeend");
 
 		return Flux.just(Rendering.view("index :: new-todo").model(model.asMap()).build(),
 				Rendering.view("index :: todos").model(model.asMap()).build(),
@@ -80,14 +83,15 @@ class HtmxTodoController {
 	Flux<Rendering> htmxToggleCompletion(@PathVariable UUID id, @RequestParam Optional<String> filter, Model model) {
 
 		Todo todo = template.find(id);
-		todo = template.save(todo.toggleCompletion(), model, filter);
-		model.addAttribute("todo", todo);
+		final Todo result = template.save(todo.toggleCompletion(), model, filter);
+		model.addAttribute("todo", result);
 
 		return filter
-				.map(it -> it.equals("active")
+				.map(it -> it.equals("active") && result.isCompleted() || it.equals("inactive") && !result.isCompleted()
 						? Flux.just(Rendering.view("fragments :: remove-todo").model(model.asMap()).build())
 						: Flux.just(Rendering.view("fragments :: update-todo").model(model.asMap()).build()))
-				.orElse(Flux.just(Rendering.view("fragments :: update-todo").model(model.asMap()).build())).concatWithValues(Rendering.view("index :: foot").model(model.asMap()).build());
+				.orElse(Flux.just(Rendering.view("fragments :: update-todo").model(model.asMap()).build()))
+				.concatWithValues(Rendering.view("index :: foot").model(model.asMap()).build());
 	}
 
 	@DeleteMapping("/{id}")

@@ -2,7 +2,7 @@
 
 
 <th:block th:fragment="todo(todo,action)">	
-<li th:attr="id=${'todo-' + todo.id},hx-swap-oob=${action?:'none'}" th:class="${todo.completed ? 'completed' : ''}">
+<li th:attr="hx-swap-oob=${#strings.isEmpty(action) ? '' : action}" th:attrappend="id=${'todo-' + todo.id}" th:class="${todo.completed ? 'completed' : ''}">
 	<div class="view">
 		<form th:method="put" th:action="@{/{id}/toggle(id=${todo.id},filter=${filter})}" hx-swap="none">
 			<input class="toggle" type="checkbox" th:checked="${todo.completed}" onchange="this.form.requestSubmit()"></index>

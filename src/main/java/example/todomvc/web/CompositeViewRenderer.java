@@ -2,7 +2,10 @@ package example.todomvc.web;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -30,6 +33,8 @@ import reactor.core.publisher.Mono;
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class CompositeViewRenderer implements HandlerResultHandler {
+
+	private static Log logger = LogFactory.getLog(CompositeViewRenderer.class);
 
 	private final ViewResolver resolver;
 
@@ -78,7 +83,8 @@ public class CompositeViewRenderer implements HandlerResultHandler {
 	}
 
 	private Flux<Flux<DataBuffer>> render(ExchangeWrapper exchange, Flux<Rendering> renderings) {
-		return renderings.flatMap(rendering -> render(exchange, rendering));
+		return renderings.flatMap(rendering -> render(exchange, rendering))
+				.contextWrite(view -> view.put("body", new AtomicReference<Flux<Flux<DataBuffer>>>(Flux.empty())));
 	}
 
 	private Flux<Flux<DataBuffer>> render(ExchangeWrapper exchange, Rendering rendering) {
@@ -87,13 +93,18 @@ public class CompositeViewRenderer implements HandlerResultHandler {
 			view = Mono.just((View) rendering.view());
 		} else {
 			Locale locale = exchange.getLocaleContext().getLocale();
-			if (locale==null) {
+			if (locale == null) {
 				locale = Locale.getDefault();
 			}
 			view = resolver.resolveViewName((String) rendering.view(), locale);
 		}
+		logger.info("View: " + rendering.view());
 		return view.flatMap(actual -> actual.render(rendering.modelAttributes(), MediaType.TEXT_HTML, exchange))
-				.thenMany(Flux.defer(() -> exchange.release()));
+				.thenMany(Flux.deferContextual(context -> {
+					@SuppressWarnings("unchecked")
+					Flux<Flux<DataBuffer>> flux = ((AtomicReference<Flux<Flux<DataBuffer>>>) context.get("body")).getAndSet(Flux.empty());
+					return flux;
+				}));
 	}
 
 	static class ExchangeWrapper extends ServerWebExchangeDecorator {
@@ -110,23 +121,11 @@ public class CompositeViewRenderer implements HandlerResultHandler {
 			return this.response;
 		}
 
-		public Flux<Flux<DataBuffer>> release() {
-			Flux<Flux<DataBuffer>> body = response.getBody();
-			this.response = new ResponseWrapper(super.getResponse());
-			return body;
-		}
-
 	}
 
 	static class ResponseWrapper extends ServerHttpResponseDecorator {
 
-		private Flux<Flux<DataBuffer>> body = Flux.empty();
-
 		private HttpHeaders headers;
-
-		public Flux<Flux<DataBuffer>> getBody() {
-			return body;
-		}
 
 		public ResponseWrapper(ServerHttpResponse delegate) {
 			super(delegate);
@@ -146,8 +145,15 @@ public class CompositeViewRenderer implements HandlerResultHandler {
 		@Override
 		public Mono<Void> writeAndFlushWith(Publisher<? extends Publisher<? extends DataBuffer>> body) {
 			Flux<Flux<DataBuffer>> map = Flux.from(body).map(publisher -> Flux.from(publisher));
-			this.body = this.body.concatWith(map);
-			return Mono.empty();
+			return Mono.deferContextual(context -> {
+				@SuppressWarnings("unchecked")
+				AtomicReference<Flux<Flux<DataBuffer>>> flux = (AtomicReference<Flux<Flux<DataBuffer>>>) context
+						.get("body");
+				return flux.updateAndGet(buffer -> {
+					logger.info("Append: " + map);
+					return buffer.concatWith(map);
+				}).then();
+			});
 		}
 
 	}
