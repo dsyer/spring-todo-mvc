@@ -1,8 +1,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
 
 
-<th:block th:fragment="todo(todo,action)">	
-<li th:attr="hx-swap-oob=${#strings.isEmpty(action) ? '' : action}" th:attrappend="id=${'todo-' + todo.id}" th:class="${todo.completed ? 'completed' : ''}">
+<li th:fragment="todo(todo,action)" th:attr="hx-swap-oob=${#strings.isEmpty(action) ? '' : action}" th:attrappend="id=${'todo-' + todo.id}" th:class="${todo.completed ? 'completed' : ''}">
 	<div class="view">
 		<form th:method="put" th:action="@{/{id}/toggle(id=${todo.id},filter=${filter})}" hx-swap="none">
 			<input class="toggle" type="checkbox" th:checked="${todo.completed}" onchange="this.form.requestSubmit()"></index>
@@ -15,7 +14,6 @@
 	</div>
 	<input class="edit" value="Create a TodoMVC template"></input>
 </li>
-</th:block>
 
 <li th:fragment="update-todo(todo)" th:insert="fragments :: todo(${todo},'true')"</li>
 
