@@ -98,11 +98,12 @@ public class CompositeViewRenderer implements HandlerResultHandler {
 			}
 			view = resolver.resolveViewName((String) rendering.view(), locale);
 		}
-		logger.info("View: " + rendering.view());
+		logger.debug("View: " + rendering.view());
 		return view.flatMap(actual -> actual.render(rendering.modelAttributes(), MediaType.TEXT_HTML, exchange))
 				.thenMany(Flux.deferContextual(context -> {
 					@SuppressWarnings("unchecked")
-					Flux<Flux<DataBuffer>> flux = ((AtomicReference<Flux<Flux<DataBuffer>>>) context.get("body")).getAndSet(Flux.empty());
+					Flux<Flux<DataBuffer>> flux = ((AtomicReference<Flux<Flux<DataBuffer>>>) context.get("body"))
+							.getAndSet(Flux.empty());
 					return flux;
 				}));
 	}
@@ -150,7 +151,7 @@ public class CompositeViewRenderer implements HandlerResultHandler {
 				AtomicReference<Flux<Flux<DataBuffer>>> flux = (AtomicReference<Flux<Flux<DataBuffer>>>) context
 						.get("body");
 				return flux.updateAndGet(buffer -> {
-					logger.info("Append: " + map);
+					logger.debug("Appending: " + map);
 					return buffer.concatWith(map);
 				}).then();
 			});
