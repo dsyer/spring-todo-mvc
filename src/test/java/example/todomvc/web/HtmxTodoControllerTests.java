@@ -37,7 +37,7 @@ class HtmxTodoControllerTests {
         this.webClient.put().uri("/{id}/toggle", todo.getId()).header("HX-Request", "true").exchange().expectStatus()
                 .isOk().expectBody(String.class).value(value -> {
                     assertThat(value).contains("<li");
-                    assertThat(value).doesNotContain("<li><li")
+                    assertThat(value).doesNotContain("<li><li");
                     assertThat(value).contains("hx-swap-oob=\"true\"");
                     assertThat(value).contains("Incomplete");
                     assertThat(value).contains("class=\"completed\"");
