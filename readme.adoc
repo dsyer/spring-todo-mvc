@@ -1,6 +1,6 @@
-= TodoWebflux Spring Boot HTMX demo
+= Todo Spring Boot HTMX demo
 
-This is a small sample application that shows the prototype https://htmx.org[HTMX] integration to build the canonical https://todomvc.com[TodoMVC] application using server-side rendering in Spring Boot using Thymeleaf.
+This is a small sample application that shows the prototype https://htmx.org[HTMX] integration to build the canonical https://todomvc.com[TodoMVC] application using server-side rendering in Spring Boot using Thymeleaf. This sample is for Spring Webflux. There is a Web MVC version on a branch called "webmvc".
 
 == Basics
 
