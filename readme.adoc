@@ -19,5 +19,5 @@ You can see this in your browsers developer tools (for Chrome: note that the Net
 == HTMX partials
 
 If the application is run with the `htmx` profile active (`-Phtmx`), the `HtmxTodoController` is registered as well and responds to HTMX's requests (identified via the `HX-Request=true` request header, mapped via `HtmxTodoController`).
-The controller methods return `Flux<Rendering>` that render Thymeleaf fragments instead of the entire page.
+The controller methods return `List<ModelAndView>` that render Thymeleaf fragments instead of the entire page.
 The individually returned `<div />` elements returned are then picked up by HTMX running in the browser to update the corresponding parts of the page.

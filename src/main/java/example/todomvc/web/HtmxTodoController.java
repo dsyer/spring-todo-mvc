@@ -15,10 +15,10 @@
  */
 package example.todomvc.web;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-
-import javax.validation.Valid;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Controller;
@@ -31,12 +31,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.reactive.result.view.Rendering;
+import org.springframework.web.servlet.ModelAndView;
 
 import example.todomvc.Todo;
 import example.todomvc.web.TemplateModel.TodoForm;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import reactor.core.publisher.Flux;
 
 @Profile("htmx")
 @Controller
@@ -47,13 +47,13 @@ class HtmxTodoController {
 	private final TemplateModel template;
 
 	@GetMapping("/")
-	Flux<Rendering> htmxIndex(Model model, @RequestParam Optional<String> filter) {
+	List<ModelAndView> htmxIndex(Model model, @RequestParam Optional<String> filter) {
 
 		template.prepareForm(model, filter);
 		model.addAttribute("action", "true");
 
-		return Flux.just(Rendering.view("index :: todos").model(model.asMap()).build(),
-				Rendering.view("index :: foot").model(model.asMap()).build());
+		return List.of(new ModelAndView("index :: todos", model.asMap()),
+				new ModelAndView("index :: foot", model.asMap()));
 	}
 
 	/**
@@ -67,46 +67,47 @@ class HtmxTodoController {
 	 * @return
 	 */
 	@PostMapping("/")
-	Flux<Rendering> htmxCreateTodo(@Valid @ModelAttribute("form") TodoForm form, @RequestParam Optional<String> filter,
+	List<ModelAndView> htmxCreateTodo(@Valid @ModelAttribute("form") TodoForm form, @RequestParam Optional<String> filter,
 			Model model) {
 
 		template.saveForm(form, model, filter);
 		model.addAttribute("form", new TodoForm(""));
 		model.addAttribute("action", "beforeend");
 
-		return Flux.just(Rendering.view("index :: new-todo").model(model.asMap()).build(),
-				Rendering.view("index :: todos").model(model.asMap()).build(),
-				Rendering.view("index :: foot").model(model.asMap()).build());
+		return List.of(new ModelAndView("index :: new-todo", model.asMap()),
+				new ModelAndView("index :: todos", model.asMap()),
+				new ModelAndView("index :: foot", model.asMap()));
 	}
 
 	@PutMapping("/{id}/toggle")
-	Flux<Rendering> htmxToggleCompletion(@PathVariable UUID id, @RequestParam Optional<String> filter, Model model) {
+	List<ModelAndView> htmxToggleCompletion(@PathVariable UUID id, @RequestParam Optional<String> filter, Model model) {
 
 		Todo todo = template.find(id);
 		final Todo result = template.save(todo.toggleCompletion(), model, filter);
 		model.addAttribute("todo", result);
 
-		return filter
+		List<ModelAndView> list = new ArrayList<>(filter
 				.map(it -> it.equals("active") && result.isCompleted() || it.equals("inactive") && !result.isCompleted()
-						? Flux.just(Rendering.view("fragments :: remove-todo").model(model.asMap()).build())
-						: Flux.just(Rendering.view("fragments :: update-todo").model(model.asMap()).build()))
-				.orElse(Flux.just(Rendering.view("fragments :: update-todo").model(model.asMap()).build()))
-				.concatWithValues(Rendering.view("index :: foot").model(model.asMap()).build());
+						? List.of(new ModelAndView("fragments :: remove-todo", model.asMap()))
+						: List.of(new ModelAndView("fragments :: update-todo", model.asMap())))
+				.orElse(List.of(new ModelAndView("fragments :: update-todo", model.asMap()))));
+		list.add(new ModelAndView("index :: foot", model.asMap()));
+		return list;
 	}
 
 	@DeleteMapping("/{id}")
-	Flux<Rendering> htmxDeleteTodo(@PathVariable UUID id, @RequestParam Optional<String> filter, Model model) {
+	List<ModelAndView> htmxDeleteTodo(@PathVariable UUID id, @RequestParam Optional<String> filter, Model model) {
 
 		Todo todo = template.find(id);
 		template.delete(todo, model, filter);
 		model.addAttribute("todo", todo);
 
-		return Flux.just(Rendering.view("fragments :: remove-todo").model(model.asMap()).build(),
-				Rendering.view("index :: foot").model(model.asMap()).build());
+		return List.of(new ModelAndView("fragments :: remove-todo", model.asMap()),
+				new ModelAndView("index :: foot", model.asMap()));
 	}
 
 	@DeleteMapping("/completed")
-	Flux<Rendering> htmxDeleteCompletedTodos(@RequestParam Optional<String> filter, Model model) {
+	List<ModelAndView> htmxDeleteCompletedTodos(@RequestParam Optional<String> filter, Model model) {
 
 		template.deleteCompletedTodos();
 

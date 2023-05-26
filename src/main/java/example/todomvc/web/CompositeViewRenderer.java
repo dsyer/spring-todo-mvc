@@ -1,162 +1,179 @@
 package example.todomvc.web;
 
-import java.nio.charset.StandardCharsets;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.reactivestreams.Publisher;
+import org.springframework.context.ApplicationContext;
+import org.springframework.core.MethodParameter;
 import org.springframework.core.Ordered;
+import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.Order;
-import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.core.io.buffer.DataBufferFactory;
-import org.springframework.core.io.buffer.DataBufferUtils;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.http.server.reactive.ServerHttpResponse;
-import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.reactive.HandlerResult;
-import org.springframework.web.reactive.HandlerResultHandler;
-import org.springframework.web.reactive.result.method.InvocableHandlerMethod;
-import org.springframework.web.reactive.result.view.Rendering;
-import org.springframework.web.reactive.result.view.View;
-import org.springframework.web.reactive.result.view.ViewResolver;
-import org.springframework.web.server.ServerWebExchange;
-import org.springframework.web.server.ServerWebExchangeDecorator;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.method.support.HandlerMethodReturnValueHandler;
+import org.springframework.web.method.support.ModelAndViewContainer;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.View;
+import org.springframework.web.servlet.ViewResolver;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.WriteListener;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponseWrapper;
 
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
-public class CompositeViewRenderer implements HandlerResultHandler {
+public class CompositeViewRenderer implements HandlerMethodReturnValueHandler, WebMvcConfigurer {
 
 	private static Log logger = LogFactory.getLog(CompositeViewRenderer.class);
 
-	private final ViewResolver resolver;
+	private ViewResolver resolver;
 
-	public CompositeViewRenderer(ViewResolver resolver) {
-		this.resolver = resolver;
+	private final ApplicationContext context;
+
+	public CompositeViewRenderer(ApplicationContext context) {
+		this.context = context;
 	}
 
 	@Override
-	public boolean supports(HandlerResult result) {
-		if (Publisher.class.isAssignableFrom(result.getReturnType().toClass())) {
-			if (Rendering.class.isAssignableFrom(result.getReturnType().getGeneric(0).toClass())) {
+	public void addReturnValueHandlers(List<HandlerMethodReturnValueHandler> handlers) {
+		handlers.add(this);
+	}
+
+	@Override
+	public boolean supportsReturnType(MethodParameter returnType) {
+		initialize();
+		if (List.class.isAssignableFrom(returnType.getParameterType())) {
+			if (ModelAndView.class
+					.isAssignableFrom(ResolvableType.forMethodParameter(returnType).getGeneric().resolve())) {
 				return true;
 			}
 		}
 		return false;
 	}
 
+	private void initialize() {
+		if (this.resolver == null) {
+			this.resolver = context.getBean("viewResolver", ViewResolver.class);
+		}
+	}
+
 	@Override
-	public Mono<Void> handleResult(ServerWebExchange exchange, HandlerResult result) {
-		String[] methodAnnotation = ((InvocableHandlerMethod) result.getHandler())
+	public void handleReturnValue(@Nullable Object returnValue, MethodParameter returnType,
+			ModelAndViewContainer mavContainer, NativeWebRequest webRequest) throws Exception {
+		String[] methodAnnotation = returnType
 				.getMethodAnnotation(RequestMapping.class).produces();
 		MediaType type = methodAnnotation.length > 0 ? MediaType.valueOf(methodAnnotation[0]) : MediaType.TEXT_HTML;
-		exchange.getResponse().getHeaders().setContentType(type);
-		boolean sse = MediaType.TEXT_EVENT_STREAM.includes(type);
+		var response = webRequest.getNativeResponse(HttpServletResponse.class);
+		var request = webRequest.getNativeRequest(HttpServletRequest.class);
+		response.setContentType(type.toString());
 		@SuppressWarnings("unchecked")
-		Flux<Rendering> renderings = Flux.from((Publisher<Rendering>) result.getReturnValue());
-		final ExchangeWrapper wrapper = new ExchangeWrapper(exchange);
-		return exchange.getResponse().writeAndFlushWith(render(wrapper, renderings)
-				.map(buffers -> transform(exchange.getResponse().bufferFactory(), buffers, sse)));
+		List<ModelAndView> renderings = resolve(response, (List<ModelAndView>) returnValue);
+		mavContainer.setView(new CompositeView(renderings, request, response));
 	}
 
-	private Publisher<DataBuffer> transform(DataBufferFactory factory, Flux<DataBuffer> buffers, boolean sse) {
-		if (sse) {
-			buffers = buffers.map(buffer -> prefix(buffer, factory.allocateBuffer(buffer.capacity())));
+	private List<ModelAndView> resolve(HttpServletResponse response, List<ModelAndView> renderings) {
+		for (ModelAndView rendering : renderings) {
+			try {
+				resolve(response, rendering);
+			} catch (Exception e) {
+				logger.error("Failed to resolve view", e);
+			}
 		}
-		// Add closing empty lines
-		return buffers.map(buffer -> buffer.write("\n\n", StandardCharsets.UTF_8));
+		return renderings;
 	}
 
-	private DataBuffer prefix(DataBuffer buffer, DataBuffer result) {
-		String body = buffer.toString(StandardCharsets.UTF_8);
-		body = "data:" + body.replace("\n", "\ndata:");
-		result.write(body, StandardCharsets.UTF_8);
-		DataBufferUtils.release(buffer);
-		return result;
-	}
-
-	private Flux<Flux<DataBuffer>> render(ExchangeWrapper exchange, Flux<Rendering> renderings) {
-		return renderings.flatMap(rendering -> render(exchange, rendering))
-				.contextWrite(view -> view.put("body", new AtomicReference<Flux<Flux<DataBuffer>>>(Flux.empty())));
-	}
-
-	private Flux<Flux<DataBuffer>> render(ExchangeWrapper exchange, Rendering rendering) {
-		Mono<View> view = null;
-		if (rendering.view() instanceof View) {
-			view = Mono.just((View) rendering.view());
+	private void resolve(HttpServletResponse response, ModelAndView rendering) throws Exception {
+		View view = null;
+		if (rendering.getView() instanceof View) {
+			view = (View) rendering.getView();
 		} else {
-			Locale locale = exchange.getLocaleContext().getLocale();
+			Locale locale = response.getLocale();
 			if (locale == null) {
 				locale = Locale.getDefault();
 			}
-			view = resolver.resolveViewName((String) rendering.view(), locale);
+			view = resolver.resolveViewName((String) rendering.getViewName(), locale);
 		}
-		logger.debug("View: " + rendering.view());
-		return view.flatMap(actual -> actual.render(rendering.modelAttributes(), MediaType.TEXT_HTML, exchange))
-				.thenMany(Flux.deferContextual(context -> {
-					@SuppressWarnings("unchecked")
-					Flux<Flux<DataBuffer>> flux = ((AtomicReference<Flux<Flux<DataBuffer>>>) context.get("body"))
-							.getAndSet(Flux.empty());
-					return flux;
-				}));
+		rendering.setView(view);
 	}
 
-	static class ExchangeWrapper extends ServerWebExchangeDecorator {
+	static class CompositeView implements View {
 
-		private ResponseWrapper response;
+		private List<ModelAndView> renderings;
+		private HttpServletRequest request;
+		private HttpServletResponse response;
 
-		protected ExchangeWrapper(ServerWebExchange delegate) {
-			super(delegate);
-			this.response = new ResponseWrapper(super.getResponse());
+		public CompositeView(List<ModelAndView> renderings, HttpServletRequest request, HttpServletResponse response) {
+			this.renderings = renderings;
+			this.request = request;
+			this.response = response;
 		}
 
 		@Override
-		public ServerHttpResponse getResponse() {
-			return this.response;
-		}
-
-	}
-
-	static class ResponseWrapper extends ServerHttpResponseDecorator {
-
-		private HttpHeaders headers;
-
-		public ResponseWrapper(ServerHttpResponse delegate) {
-			super(delegate);
-			headers = HttpHeaders.writableHttpHeaders(delegate.getHeaders());
-		}
-
-		@Override
-		public HttpHeaders getHeaders() {
-			return this.headers;
-		}
-
-		@Override
-		public Mono<Void> writeWith(Publisher<? extends DataBuffer> body) {
-			return writeAndFlushWith(Mono.just(body));
-		}
-
-		@Override
-		public Mono<Void> writeAndFlushWith(Publisher<? extends Publisher<? extends DataBuffer>> body) {
-			Flux<Flux<DataBuffer>> map = Flux.from(body).map(publisher -> Flux.from(publisher));
-			return Mono.deferContextual(context -> {
-				@SuppressWarnings("unchecked")
-				AtomicReference<Flux<Flux<DataBuffer>>> flux = (AtomicReference<Flux<Flux<DataBuffer>>>) context
-						.get("body");
-				return flux.updateAndGet(buffer -> {
-					logger.debug("Appending: " + map);
-					return buffer.concatWith(map);
-				}).then();
-			});
+		public void render(@Nullable Map<String, ?> model, HttpServletRequest request, HttpServletResponse response)
+				throws Exception {
+			StringBuilder content = new StringBuilder();
+			for (ModelAndView rendering : renderings) {
+				ResponseWrapper wrapper = new ResponseWrapper(response);
+				rendering.getView().render(rendering.getModel(), request, wrapper);
+				content.append(new String(wrapper.getBytes()));
+				content.append("\n\n");
+			}
+			response.getWriter().write(content.toString());
 		}
 
 	}
 
+	static class ResponseWrapper extends HttpServletResponseWrapper {
+
+		private ServletOutputStream out;
+		private ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+		public ResponseWrapper(HttpServletResponse response) {
+			super(response);
+			this.out = new ServletOutputStream() {
+
+				@Override
+				public void write(int b) throws IOException {
+					bytes.write(b);
+				}
+
+				@Override
+				public boolean isReady() {
+					return true;
+				}
+
+				@Override
+				public void setWriteListener(WriteListener listener) {
+				}
+
+			};
+		}
+
+		@Override
+		public ServletOutputStream getOutputStream() throws IOException {
+			return this.out;
+		}
+
+		@Override
+		public PrintWriter getWriter() throws IOException {
+			return new PrintWriter(this.out);
+		}
+
+		public byte[] getBytes() {
+			return this.bytes.toByteArray();
+		}
+
+	}
 }

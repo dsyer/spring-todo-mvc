@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.Optional;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
