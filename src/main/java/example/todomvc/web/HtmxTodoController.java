@@ -37,6 +37,7 @@ import example.todomvc.Todo;
 import example.todomvc.web.TemplateModel.TodoForm;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import reactor.core.publisher.Flux;
 
 @Profile("htmx")
 @Controller
@@ -47,12 +48,12 @@ class HtmxTodoController {
 	private final TemplateModel template;
 
 	@GetMapping("/")
-	List<ModelAndView> htmxIndex(Model model, @RequestParam Optional<String> filter) {
+	Flux<ModelAndView> htmxIndex(Model model, @RequestParam Optional<String> filter) {
 
 		template.prepareForm(model, filter);
 		model.addAttribute("action", "true");
 
-		return List.of(new ModelAndView("index :: todos", model.asMap()),
+		return Flux.just(new ModelAndView("index :: todos", model.asMap()),
 				new ModelAndView("index :: foot", model.asMap()));
 	}
 
@@ -67,47 +68,47 @@ class HtmxTodoController {
 	 * @return
 	 */
 	@PostMapping("/")
-	List<ModelAndView> htmxCreateTodo(@Valid @ModelAttribute("form") TodoForm form, @RequestParam Optional<String> filter,
+	Flux<ModelAndView> htmxCreateTodo(@Valid @ModelAttribute("form") TodoForm form, @RequestParam Optional<String> filter,
 			Model model) {
 
 		template.saveForm(form, model, filter);
 		model.addAttribute("form", new TodoForm(""));
 		model.addAttribute("action", "beforeend");
 
-		return List.of(new ModelAndView("index :: new-todo", model.asMap()),
+		return Flux.just(new ModelAndView("index :: new-todo", model.asMap()),
 				new ModelAndView("index :: todos", model.asMap()),
 				new ModelAndView("index :: foot", model.asMap()));
 	}
 
 	@PutMapping("/{id}/toggle")
-	List<ModelAndView> htmxToggleCompletion(@PathVariable UUID id, @RequestParam Optional<String> filter, Model model) {
+	Flux<ModelAndView> htmxToggleCompletion(@PathVariable UUID id, @RequestParam Optional<String> filter, Model model) {
 
 		Todo todo = template.find(id);
 		final Todo result = template.save(todo.toggleCompletion(), model, filter);
 		model.addAttribute("todo", result);
 
-		List<ModelAndView> list = new ArrayList<>(filter
+		Flux<ModelAndView> list = filter
 				.map(it -> it.equals("active") && result.isCompleted() || it.equals("inactive") && !result.isCompleted()
-						? List.of(new ModelAndView("fragments :: remove-todo", model.asMap()))
-						: List.of(new ModelAndView("fragments :: update-todo", model.asMap())))
-				.orElse(List.of(new ModelAndView("fragments :: update-todo", model.asMap()))));
-		list.add(new ModelAndView("index :: foot", model.asMap()));
+						? Flux.just(new ModelAndView("fragments :: remove-todo", model.asMap()))
+						: Flux.just(new ModelAndView("fragments :: update-todo", model.asMap())))
+				.orElse(Flux.just(new ModelAndView("fragments :: update-todo", model.asMap())))
+				.concatWithValues(new ModelAndView("index :: foot", model.asMap()));
 		return list;
 	}
 
 	@DeleteMapping("/{id}")
-	List<ModelAndView> htmxDeleteTodo(@PathVariable UUID id, @RequestParam Optional<String> filter, Model model) {
+	Flux<ModelAndView> htmxDeleteTodo(@PathVariable UUID id, @RequestParam Optional<String> filter, Model model) {
 
 		Todo todo = template.find(id);
 		template.delete(todo, model, filter);
 		model.addAttribute("todo", todo);
 
-		return List.of(new ModelAndView("fragments :: remove-todo", model.asMap()),
+		return Flux.just(new ModelAndView("fragments :: remove-todo", model.asMap()),
 				new ModelAndView("index :: foot", model.asMap()));
 	}
 
 	@DeleteMapping("/completed")
-	List<ModelAndView> htmxDeleteCompletedTodos(@RequestParam Optional<String> filter, Model model) {
+	Flux<ModelAndView> htmxDeleteCompletedTodos(@RequestParam Optional<String> filter, Model model) {
 
 		template.deleteCompletedTodos();
 
