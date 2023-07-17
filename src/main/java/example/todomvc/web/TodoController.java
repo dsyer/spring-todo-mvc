@@ -1,14 +1,9 @@
 package example.todomvc.web;
 
-import example.todomvc.Todo;
-import example.todomvc.web.TemplateModel.TodoForm;
-import lombok.RequiredArgsConstructor;
-
 import java.util.Optional;
 
 import javax.validation.Valid;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -21,6 +16,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.HttpClientErrorException;
+
+import example.todomvc.Todo;
+import example.todomvc.web.TemplateModel.TodoForm;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Spring MVC controller to render a traditional Thymeleaf template. Assumes full HTTP requests and rendering.

@@ -75,7 +75,11 @@ class HtmxTodoControllerTests {
     @Test
     void testIndex() throws Exception {
         this.webClient.get().uri("/").header("HX-Request", "true").exchange().expectStatus().isOk()
-                .expectBody(String.class).value(value -> assertThat(value).contains("Completed"));
+                .expectBody(String.class)
+                .value(
+                    value -> 
+                        assertThat(value).contains("Completed")
+                );
     }
 
 }
