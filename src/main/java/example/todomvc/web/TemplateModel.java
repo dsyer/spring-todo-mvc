@@ -23,7 +23,7 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.UUID;
 
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.TypedSort;

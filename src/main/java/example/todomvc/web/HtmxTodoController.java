@@ -18,7 +18,7 @@ package example.todomvc.web;
 import java.util.Optional;
 import java.util.UUID;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Controller;
