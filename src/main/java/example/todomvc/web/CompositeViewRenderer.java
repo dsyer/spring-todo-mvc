@@ -1,8 +1,5 @@
 package example.todomvc.web;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -26,11 +23,8 @@ import org.springframework.web.servlet.View;
 import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import jakarta.servlet.ServletOutputStream;
-import jakarta.servlet.WriteListener;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpServletResponseWrapper;
 
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -76,11 +70,10 @@ public class CompositeViewRenderer implements HandlerMethodReturnValueHandler, W
 				.getMethodAnnotation(RequestMapping.class).produces();
 		MediaType type = methodAnnotation.length > 0 ? MediaType.valueOf(methodAnnotation[0]) : MediaType.TEXT_HTML;
 		var response = webRequest.getNativeResponse(HttpServletResponse.class);
-		var request = webRequest.getNativeRequest(HttpServletRequest.class);
 		response.setContentType(type.toString());
 		@SuppressWarnings("unchecked")
 		List<ModelAndView> renderings = resolve(response, (List<ModelAndView>) returnValue);
-		mavContainer.setView(new CompositeView(renderings, request, response));
+		mavContainer.setView(new CompositeView(renderings));
 	}
 
 	private List<ModelAndView> resolve(HttpServletResponse response, List<ModelAndView> renderings) {
@@ -111,69 +104,20 @@ public class CompositeViewRenderer implements HandlerMethodReturnValueHandler, W
 	static class CompositeView implements View {
 
 		private List<ModelAndView> renderings;
-		private HttpServletRequest request;
-		private HttpServletResponse response;
 
-		public CompositeView(List<ModelAndView> renderings, HttpServletRequest request, HttpServletResponse response) {
+		public CompositeView(List<ModelAndView> renderings) {
 			this.renderings = renderings;
-			this.request = request;
-			this.response = response;
 		}
 
 		@Override
 		public void render(@Nullable Map<String, ?> model, HttpServletRequest request, HttpServletResponse response)
 				throws Exception {
-			StringBuilder content = new StringBuilder();
 			for (ModelAndView rendering : renderings) {
-				ResponseWrapper wrapper = new ResponseWrapper(response);
-				rendering.getView().render(rendering.getModel(), request, wrapper);
-				content.append(new String(wrapper.getBytes()));
-				content.append("\n\n");
+				rendering.getView().render(rendering.getModel(), request, response);
+				response.getWriter().write("\n\n");
 			}
-			response.getWriter().write(content.toString());
 		}
 
 	}
 
-	static class ResponseWrapper extends HttpServletResponseWrapper {
-
-		private ServletOutputStream out;
-		private ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-
-		public ResponseWrapper(HttpServletResponse response) {
-			super(response);
-			this.out = new ServletOutputStream() {
-
-				@Override
-				public void write(int b) throws IOException {
-					bytes.write(b);
-				}
-
-				@Override
-				public boolean isReady() {
-					return true;
-				}
-
-				@Override
-				public void setWriteListener(WriteListener listener) {
-				}
-
-			};
-		}
-
-		@Override
-		public ServletOutputStream getOutputStream() throws IOException {
-			return this.out;
-		}
-
-		@Override
-		public PrintWriter getWriter() throws IOException {
-			return new PrintWriter(this.out);
-		}
-
-		public byte[] getBytes() {
-			return this.bytes.toByteArray();
-		}
-
-	}
 }

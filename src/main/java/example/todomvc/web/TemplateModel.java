@@ -15,21 +15,19 @@
  */
 package example.todomvc.web;
 
-import example.todomvc.Todo;
-import example.todomvc.Todos;
-import lombok.RequiredArgsConstructor;
-
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.UUID;
-
-import jakarta.validation.constraints.NotBlank;
 
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.TypedSort;
 import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
 import org.springframework.ui.Model;
+
+import example.todomvc.Todo;
+import example.todomvc.Todos;
+import jakarta.validation.constraints.NotBlank;
 
 /**
  * Helper component to prepare {@link Model} instances to render a template.
@@ -38,12 +36,15 @@ import org.springframework.ui.Model;
  * @author Oliver Drotbohm
  */
 @Component
-@RequiredArgsConstructor
 class TemplateModel {
 
 	private static final Sort DEFAULT_SORT = TypedSort.sort(Todo.class).by(Todo::getCreated);
 
 	private final Todos todos;
+
+	public TemplateModel(Todos todos) {
+		this.todos = todos;
+	}
 
 	void prepareForm(Model model, Optional<String> filter) {
 

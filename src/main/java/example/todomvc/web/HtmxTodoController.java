@@ -36,15 +36,17 @@ import org.springframework.web.servlet.ModelAndView;
 import example.todomvc.Todo;
 import example.todomvc.web.TemplateModel.TodoForm;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 
 @Profile("htmx")
 @Controller
-@RequiredArgsConstructor
 @RequestMapping(headers = "HX-Request=true")
 class HtmxTodoController {
 
 	private final TemplateModel template;
+
+	public HtmxTodoController(TemplateModel template) {
+		this.template = template;
+	}
 
 	@GetMapping("/")
 	List<ModelAndView> htmxIndex(Model model, @RequestParam Optional<String> filter) {

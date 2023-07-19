@@ -15,7 +15,7 @@
 	<input class="edit" value="Create a TodoMVC template"></input>
 </li>
 
-<th:block th:fragment="update-todo(todo)" th:insert="fragments :: todo(${todo},'true')"></th:block>
+<th:block th:fragment="update-todo(todo)" th:insert="~{fragments :: todo(${todo},'true')}"></th:block>
 
 <li th:fragment="remove-todo(todo)" th:attr="id=${'todo-' + todo.id}" hx-swap-oob="true"></li>
 
