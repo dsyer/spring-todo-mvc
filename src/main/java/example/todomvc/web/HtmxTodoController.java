@@ -54,8 +54,8 @@ class HtmxTodoController {
 		template.prepareForm(model, filter);
 		model.addAttribute("action", "true");
 
-		return List.of(new ModelAndView("index :: todos", model.asMap()),
-				new ModelAndView("index :: foot", model.asMap()));
+		return List.of(new ModelAndView("todos", model.asMap()),
+				new ModelAndView("foot", model.asMap()));
 	}
 
 	/**
@@ -69,31 +69,31 @@ class HtmxTodoController {
 	 * @return
 	 */
 	@PostMapping("/")
-	List<ModelAndView> htmxCreateTodo(@Valid @ModelAttribute("form") TodoForm form, @RequestParam Optional<String> filter,
+	List<ModelAndView> htmxCreateTodo(@Valid @ModelAttribute("form") TodoForm form,
+			@RequestParam Optional<String> filter,
 			Model model) {
 
 		template.saveForm(form, model, filter);
 		model.addAttribute("form", new TodoForm(""));
 		model.addAttribute("action", "beforeend");
 
-		return List.of(new ModelAndView("index :: new-todo", model.asMap()),
-				new ModelAndView("index :: todos", model.asMap()),
-				new ModelAndView("index :: foot", model.asMap()));
+		return List.of(new ModelAndView("new-todo", model.asMap()),
+				new ModelAndView("todos", model.asMap()),
+				new ModelAndView("foot", model.asMap()));
 	}
 
 	@PutMapping("/{id}/toggle")
 	List<ModelAndView> htmxToggleCompletion(@PathVariable UUID id, @RequestParam Optional<String> filter, Model model) {
 
 		Todo todo = template.find(id);
-		final Todo result = template.save(todo.toggleCompletion(), model, filter);
-		model.addAttribute("todo", result);
+		template.save(todo.toggleCompletion(), model, filter);
 
 		List<ModelAndView> list = new ArrayList<>(filter
-				.map(it -> it.equals("active") && result.isCompleted() || it.equals("inactive") && !result.isCompleted()
-						? List.of(new ModelAndView("fragments :: remove-todo", model.asMap()))
-						: List.of(new ModelAndView("fragments :: update-todo", model.asMap())))
-				.orElse(List.of(new ModelAndView("fragments :: update-todo", model.asMap()))));
-		list.add(new ModelAndView("index :: foot", model.asMap()));
+				.map(it -> it.equals("active") && todo.isCompleted() || it.equals("inactive") && !todo.isCompleted()
+						? List.of(new ModelAndView("remove-todo", model.asMap()))
+						: List.of(new ModelAndView("update-todo", model.asMap())))
+				.orElse(List.of(new ModelAndView("update-todo", model.asMap()))));
+		list.add(new ModelAndView("foot", model.asMap()));
 		return list;
 	}
 
@@ -102,10 +102,9 @@ class HtmxTodoController {
 
 		Todo todo = template.find(id);
 		template.delete(todo, model, filter);
-		model.addAttribute("todo", todo);
 
-		return List.of(new ModelAndView("fragments :: remove-todo", model.asMap()),
-				new ModelAndView("index :: foot", model.asMap()));
+		return List.of(new ModelAndView("remove-todo", model.asMap()),
+				new ModelAndView("foot", model.asMap()));
 	}
 
 	@DeleteMapping("/completed")

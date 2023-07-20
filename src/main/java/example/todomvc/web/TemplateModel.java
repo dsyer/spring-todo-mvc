@@ -53,17 +53,18 @@ class TemplateModel {
 		prepareTodos(model, filter);
 	}
 
-	Todo save(TodoForm form) {
-		return todos.save(form.toEntity());
+	TodoDto save(TodoForm form) {
+		return new TodoDto(todos.save(new Todo(form.title())));
 	}
 
 	Todo save(Todo todo) {
 		return todos.save(todo);
 	}
 
-	Todo save(Todo todo, Model model, Optional<String> filter) {
-		var result = save(todo);
-		prepareReferenceData(todo, model, filter);
+	TodoDto save(Todo todo, Model model, Optional<String> filter) {
+		var result = new TodoDto(save(todo));
+		prepareReferenceData(model, filter);
+		model.addAttribute("todo", result);
 
 		return result;
 	}
@@ -73,7 +74,8 @@ class TemplateModel {
 		var todo = save(form);
 
 		model.addAttribute("todos", Arrays.asList(todo));
-		prepareReferenceData(todo, model, filter);
+		model.addAttribute("todo", todo);
+		prepareReferenceData(model, filter);
 	}
 
 	void delete(Todo todo) {
@@ -82,7 +84,7 @@ class TemplateModel {
 
 	void delete(Todo todo, Model model, Optional<String> filter) {
 		todos.delete(todo);
-		prepareReferenceData(model, filter);
+		prepareReferenceData(todo, model, filter);
 	}
 
 	void deleteCompletedTodos() {
@@ -131,6 +133,9 @@ class TemplateModel {
 	}
 
 	public record TodoDto(UUID id, String title, boolean completed) {
+		TodoDto(Todo todo) {
+			this(todo.getId(), todo.getTitle(), todo.isCompleted());
+		}
 	}
 
 	public Todo find(UUID id) {

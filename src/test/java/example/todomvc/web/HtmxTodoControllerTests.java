@@ -48,7 +48,7 @@ class HtmxTodoControllerTests {
         this.webClient.delete().uri("/{id}", todo.getId()).header("HX-Request", "true").exchange().expectStatus()
                 .isOk().expectBody(String.class).value(value -> {
                     assertThat(value).contains("id=\"todo-" + todo.getId() + "\"");
-                    assertThat(value).contains("<li hx-swap-oob=\"true\"");
+                    assertThat(value).contains("hx-swap-oob=\"true\"");
                     assertThat(value).contains("></li>"); // empty list item
                     assertThat(value).contains("id=\"foot\"");
                 });
