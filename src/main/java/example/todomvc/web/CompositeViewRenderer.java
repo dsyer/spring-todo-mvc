@@ -88,17 +88,14 @@ public class CompositeViewRenderer implements HandlerMethodReturnValueHandler, W
 	}
 
 	private void resolve(HttpServletResponse response, ModelAndView rendering) throws Exception {
-		View view = null;
-		if (rendering.getView() instanceof View) {
-			view = (View) rendering.getView();
-		} else {
+		if (!(rendering.getView() instanceof View)) {
 			Locale locale = response.getLocale();
 			if (locale == null) {
 				locale = Locale.getDefault();
 			}
-			view = resolver.resolveViewName((String) rendering.getViewName(), locale);
+			View view = resolver.resolveViewName((String) rendering.getViewName(), locale);
+			rendering.setView(view);
 		}
-		rendering.setView(view);
 	}
 
 	static class CompositeView implements View {

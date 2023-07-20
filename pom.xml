@@ -103,7 +103,6 @@
 		</plugins>
 	</build>
 
-
 	<pluginRepositories>
 		<pluginRepository>
 			<id>spring-release</id>
