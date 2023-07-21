@@ -5,17 +5,18 @@
 	<!-- Remove this if you don't implement routing -->
 	<ul class="filters">
 		<li>
-			<a <#if filter??>class="selected"</#if> href="?" hx-swap="none">All</a>
+			<a <#if !filter?has_content>class="selected" </#if>href="?" hx-swap="none">All</a>
 		</li>
 		<li>
-			<a <#if filter!  == 'active'>class="selected"</#if> href="?filter=active" hx-swap="none">Active</a>
+			<a <#if filter!  == 'active'>class="selected" </#if>href="?filter=active" hx-swap="none">Active</a>
 		</li>
 		<li>
-			<a <#if filter!  == 'completed'>class="selected"</#if> href="?filter=completed" hx-swap="none">Completed</a>
+			<a <#if filter!  == 'completed'>class="selected" </#if>href="?filter=completed" hx-swap="none">Completed</a>
 		</li>
 	</ul>
 	<!-- Hidden if no completed items are left ↓ -->
 	<form method="delete" action="/completed?filter=${filter!}" hx-swap="none">
+		<input type="hidden" name="_method" value="delete"/>
 		<button class="clear-completed" type="submit">Clear completed</button>
 	</form>
 </footer>

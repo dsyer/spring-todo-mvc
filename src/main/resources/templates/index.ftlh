@@ -12,6 +12,7 @@
 		<section class="todoapp">
 			<header class="header">
 				<h1>todos</h1>
+				<#include "new-todo.ftlh">
 			</header>
 			<!-- This section should be hidden by default and shown when there are todos -->
 			<section class="main">
