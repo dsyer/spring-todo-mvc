@@ -142,7 +142,7 @@ class TemplateModel {
 		}
 	}
 
-	@JStache(path = "foot")
+	@JStache(path = "index#foot")
 	public record Foot(int numberOfIncomplete, int numberOfTodos, Optional<String> filter) {
 		boolean filterAll() {
 			return filter.isEmpty() || filter.get().isEmpty();
@@ -157,25 +157,25 @@ class TemplateModel {
 		}
 	}
 
-	@JStache(path = "todos")
+	@JStache(path = "index#todos")
 	public record TodosDto(List<TodoDto> todos, String action) {
 		TodosDto(List<TodoDto> todos) {
 			this(todos, null);
 		}
 	}
 
-	@JStache(path = "remove-todo")
+	@JStache(path = "fragments#remove")
 	public record RemoveTodo(UUID id) {
 	}
 
-	@JStache(path = "new-todo")
+	@JStache(path = "index#form")
 	public record NewTodo(String title) {
 		NewTodo() {
 			this("");
 		}
 	}
 
-	@JStache(path = "update-todo")
+	@JStache(path = "fragments#update")
 	public record UpdateTodo(TodoDto todo) {
 		UUID id() {
 			return todo.id();

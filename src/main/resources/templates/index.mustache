@@ -12,15 +12,48 @@
 		<section class="todoapp">
 			<header class="header">
 				<h1>todos</h1>
-				{{#form}}{{>new-todo}}{{/form}}
+				{{#form}}
+				<form id="new-todo" action="/" method="post" hx-swap="none" hx-swap-oob="true">
+					<input class="new-todo" placeholder="What needs to be done?" name="title" autofocus value="{{title}}">
+				</form>
+				{{/form}}
 			</header>
 			<!-- This section should be hidden by default and shown when there are todos -->
 			<section class="main">
 				<input id="toggle-all" class="toggle-all" type="checkbox">
 				<label for="toggle-all">Mark all as complete</label>
-				{{#todos}}{{>todos}}{{/todos}}
+				{{#todos}}
+				<ul id="todos" class="todo-list" {{#action}}hx-swap-oob="{{.}}"{{/action}}>
+					<!-- These are here just to show the structure of the list items -->
+					<!-- List items should get the class `editing` when editing and `completed` when marked as completed -->
+					{{#todos}}{{<todo}}{{/todo}}{{/todos}}
+				</ul>
+				{{/todos}}
 			</section>
-			{{#foot}}{{>foot}}{{/foot}}
+			{{#foot}}
+			<!-- This footer should be hidden by default and shown when there are todos -->
+			<footer id="foot" class="footer" {{#numberOfTodos}}hx-swap-oob="true"{{/numberOfTodos}}>
+				<!-- This should be `0 items left` by default -->
+				<span class="todo-count"><strong>{{numberOfIncomplete}}</strong> todo(s) left</span>
+				<!-- Remove this if you don't implement routing -->
+				<ul class="filters">
+					<li>
+						<a {{#filterAll}}class="selected" {{/filterAll}}href="?" hx-swap="none">All</a>
+					</li>
+					<li>
+						<a {{#filterActive}}class="selected" {{/filterActive}}href="?filter=active" hx-swap="none">Active</a>
+					</li>
+					<li>
+						<a {{#filterCompleted}}class="selected" {{/filterCompleted}}href="?filter=completed" hx-swap="none">Completed</a>
+					</li>
+				</ul>
+				<!-- Hidden if no completed items are left ↓ -->
+				<form method="delete" action="/completed?filter={{filter}}" hx-swap="none">
+					<input type="hidden" name="_method" value="delete"/>
+					<button class="clear-completed" type="submit">Clear completed</button>
+				</form>
+			</footer>
+			{{/foot}}
 		</section>
 		<footer class="info">
 			<p>Double-click to edit a todo</p>
