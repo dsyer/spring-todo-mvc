@@ -56,7 +56,7 @@ class HtmxTodoController {
 	@GetMapping("/")
 	List<View> htmxIndex(@RequestParam Optional<String> filter) {
 		return List.of(JStachioModelView.of(new TodosDto(template.prepareForm(filter), "true")),
-				JStachioModelView.of(template.createForm(filter)));
+				JStachioModelView.of(template.createFoot(filter)));
 	}
 
 	/**
@@ -77,7 +77,7 @@ class HtmxTodoController {
 
 		return List.of(JStachioModelView.of(new NewTodo()),
 				JStachioModelView.of(new TodosDto(template.prepareTodos(filter), "beforeend")),
-				JStachioModelView.of(template.createForm(filter)));
+				JStachioModelView.of(template.createFoot(filter)));
 	}
 
 	@PutMapping("/{id}/toggle")
@@ -91,7 +91,7 @@ class HtmxTodoController {
 						? List.of(JStachioModelView.of(new RemoveTodo(id)))
 						: List.of(JStachioModelView.of(new UpdateTodo(result))))
 				.orElse(List.of(JStachioModelView.of(new UpdateTodo(result)))));
-		list.add(JStachioModelView.of(template.createForm(filter)));
+		list.add(JStachioModelView.of(template.createFoot(filter)));
 		return list;
 	}
 
@@ -102,7 +102,7 @@ class HtmxTodoController {
 		template.delete(todo);
 
 		return List.of(JStachioModelView.of(new RemoveTodo(id)),
-				JStachioModelView.of(template.createForm(filter)));
+				JStachioModelView.of(template.createFoot(filter)));
 	}
 
 	@DeleteMapping("/completed")

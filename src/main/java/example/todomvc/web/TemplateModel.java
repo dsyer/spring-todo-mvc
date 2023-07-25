@@ -81,7 +81,7 @@ class TemplateModel {
 		return todos(filter).map(it -> new TodoDto(it.getId(), it.getTitle(), it.isCompleted())).toList();
 	}
 
-	Foot createForm(Optional<String> filter) {
+	Foot createFoot(Optional<String> filter) {
 		return new Foot(todos.findByCompleted(false, DEFAULT_SORT).toList().size(),
 				todos.findAll(DEFAULT_SORT).toList().size(), filter);
 	}
@@ -98,7 +98,7 @@ class TemplateModel {
 		};
 	}
 
-	public class Form {
+	public static class Form {
 		@NotBlank String title;
 		String action;
 
@@ -132,7 +132,7 @@ class TemplateModel {
 	}
 
 	public Page preparePage(Optional<String> filter) {
-		return new Page(new TodosDto(prepareTodos(filter), null), createForm(filter), new Form());
+		return new Page(new TodosDto(prepareTodos(filter), null), createFoot(filter), new Form());
 	}
 
 	@JStache(path = "index")
