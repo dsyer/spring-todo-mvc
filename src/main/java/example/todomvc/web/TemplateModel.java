@@ -64,10 +64,6 @@ class TemplateModel {
 		return result;
 	}
 
-	void saveForm(Form form) {
-		save(form);
-	}
-
 	TodoDto delete(Todo todo) {
 		todos.delete(todo);
 		return new TodoDto(todo);

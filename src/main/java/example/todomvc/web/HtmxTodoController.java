@@ -16,6 +16,7 @@
 package example.todomvc.web;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -24,7 +25,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -33,10 +33,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.View;
 
 import example.todomvc.Todo;
+import example.todomvc.web.TemplateModel.Form;
 import example.todomvc.web.TemplateModel.NewTodo;
 import example.todomvc.web.TemplateModel.RemoveTodo;
 import example.todomvc.web.TemplateModel.TodoDto;
-import example.todomvc.web.TemplateModel.Form;
 import example.todomvc.web.TemplateModel.TodosDto;
 import example.todomvc.web.TemplateModel.UpdateTodo;
 import io.jstach.opt.spring.webmvc.JStachioModelView;
@@ -72,10 +72,10 @@ class HtmxTodoController {
 	@PostMapping("/")
 	List<View> htmxCreateTodo(@Valid Form form, @RequestParam Optional<String> filter) {
 
-		template.saveForm(form);
+		TodoDto todo = template.save(form);
 
 		return List.of(JStachioModelView.of(new NewTodo()),
-				JStachioModelView.of(new TodosDto(template.prepareTodos(filter), "beforeend")),
+				JStachioModelView.of(new TodosDto(Arrays.asList(todo), "beforeend")),
 				JStachioModelView.of(template.createFoot(filter)));
 	}
 
