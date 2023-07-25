@@ -33,12 +33,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.View;
 
 import example.todomvc.Todo;
-import example.todomvc.web.TemplateModel.NewTodoDto;
-import example.todomvc.web.TemplateModel.RemoveTodoDto;
+import example.todomvc.web.TemplateModel.NewTodo;
+import example.todomvc.web.TemplateModel.RemoveTodo;
 import example.todomvc.web.TemplateModel.TodoDto;
-import example.todomvc.web.TemplateModel.TodoForm;
+import example.todomvc.web.TemplateModel.Form;
 import example.todomvc.web.TemplateModel.TodosDto;
-import example.todomvc.web.TemplateModel.UpdateTodoDto;
+import example.todomvc.web.TemplateModel.UpdateTodo;
 import io.jstach.opt.spring.webmvc.JStachioModelView;
 import jakarta.validation.Valid;
 
@@ -56,7 +56,7 @@ class HtmxTodoController {
 	@GetMapping("/")
 	List<View> htmxIndex(@RequestParam Optional<String> filter) {
 		return List.of(JStachioModelView.of(new TodosDto(template.prepareForm(filter), "true")),
-				JStachioModelView.of(template.prepareReferenceData(filter)));
+				JStachioModelView.of(template.createForm(filter)));
 	}
 
 	/**
@@ -70,14 +70,14 @@ class HtmxTodoController {
 	 * @return
 	 */
 	@PostMapping("/")
-	List<View> htmxCreateTodo(@Valid @ModelAttribute("form") TodoForm form,
+	List<View> htmxCreateTodo(@Valid @ModelAttribute("form") Form form,
 			@RequestParam Optional<String> filter) {
 
 		template.saveForm(form);
 
-		return List.of(JStachioModelView.of(new NewTodoDto()),
+		return List.of(JStachioModelView.of(new NewTodo()),
 				JStachioModelView.of(new TodosDto(template.prepareTodos(filter), "beforeend")),
-				JStachioModelView.of(template.prepareReferenceData(filter)));
+				JStachioModelView.of(template.createForm(filter)));
 	}
 
 	@PutMapping("/{id}/toggle")
@@ -88,10 +88,10 @@ class HtmxTodoController {
 
 		List<View> list = new ArrayList<>(filter
 				.map(it -> it.equals("active") && todo.isCompleted() || it.equals("inactive") && !todo.isCompleted()
-						? List.of(JStachioModelView.of(new RemoveTodoDto(id)))
-						: List.of(JStachioModelView.of(new UpdateTodoDto(result))))
-				.orElse(List.of(JStachioModelView.of(new UpdateTodoDto(result)))));
-		list.add(JStachioModelView.of(template.prepareReferenceData(filter)));
+						? List.of(JStachioModelView.of(new RemoveTodo(id)))
+						: List.of(JStachioModelView.of(new UpdateTodo(result))))
+				.orElse(List.of(JStachioModelView.of(new UpdateTodo(result)))));
+		list.add(JStachioModelView.of(template.createForm(filter)));
 		return list;
 	}
 
@@ -101,8 +101,8 @@ class HtmxTodoController {
 		Todo todo = template.find(id);
 		template.delete(todo);
 
-		return List.of(JStachioModelView.of(new RemoveTodoDto(id)),
-				JStachioModelView.of(template.prepareReferenceData(filter)));
+		return List.of(JStachioModelView.of(new RemoveTodo(id)),
+				JStachioModelView.of(template.createForm(filter)));
 	}
 
 	@DeleteMapping("/completed")

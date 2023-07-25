@@ -9,11 +9,11 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import example.todomvc.web.TemplateModel.RemoveTodoDto;
+import example.todomvc.web.TemplateModel.RemoveTodo;
 import example.todomvc.web.TemplateModel.TodoDto;
-import example.todomvc.web.TemplateModel.TodoFoot;
+import example.todomvc.web.TemplateModel.Foot;
 import example.todomvc.web.TemplateModel.TodosDto;
-import example.todomvc.web.TemplateModel.UpdateTodoDto;
+import example.todomvc.web.TemplateModel.UpdateTodo;
 import io.jstach.jstachio.JStachio;
 
 @SpringBootTest
@@ -31,7 +31,7 @@ public class FragmentTests {
 	
 	@Test
 	void testFoot() throws Exception {
-		TodoFoot foot = new TodoFoot(12, 3, Optional.of("active"));
+		Foot foot = new Foot(12, 3, Optional.of("active"));
 		StringBuilder out = new StringBuilder();
 		JStachio.render(foot, out);
 		System.err.println(out.toString());
@@ -51,7 +51,7 @@ public class FragmentTests {
 	void testUpdate() throws Exception {
 		TodoDto todo = new TodoDto(UUID.randomUUID(), "Something", false);
 		StringBuilder out = new StringBuilder();
-		JStachio.render(new UpdateTodoDto(todo), out);
+		JStachio.render(new UpdateTodo(todo), out);
 		assertThat(out.toString()).contains(todo.id().toString());
 		assertThat(out.toString()).contains("hx-swap-oob=\"true\"");
 	}
@@ -60,7 +60,7 @@ public class FragmentTests {
 	void testRemove() throws Exception {
 		TodoDto todo = new TodoDto(UUID.randomUUID(), "Something", false);
 		StringBuilder out = new StringBuilder();
-		JStachio.render(new RemoveTodoDto(todo.id()), out);
+		JStachio.render(new RemoveTodo(todo.id()), out);
 		// System.err.println(out.toString());
 		assertThat(out.toString()).contains(todo.id().toString());
 		assertThat(out.toString()).contains("hx-swap-oob=\"true\"");

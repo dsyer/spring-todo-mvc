@@ -16,7 +16,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.servlet.View;
 
 import example.todomvc.Todo;
-import example.todomvc.web.TemplateModel.TodoForm;
+import example.todomvc.web.TemplateModel.Form;
 import io.jstach.opt.spring.webmvc.JStachioModelView;
 import jakarta.validation.Valid;
 
@@ -41,7 +41,7 @@ class TodoController {
 	}
 
 	@PostMapping
-	String createTodo(@Valid @ModelAttribute("form") TodoForm form) {
+	String createTodo(@Valid @ModelAttribute("form") Form form) {
 
 		template.save(form);
 

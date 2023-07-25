@@ -51,7 +51,7 @@ class TemplateModel {
 		return prepareTodos(filter);
 	}
 
-	TodoDto save(TodoForm form) {
+	TodoDto save(Form form) {
 		return new TodoDto(todos.save(new Todo(form.getTitle())));
 	}
 
@@ -64,7 +64,7 @@ class TemplateModel {
 		return result;
 	}
 
-	void saveForm(TodoForm form) {
+	void saveForm(Form form) {
 		save(form);
 	}
 
@@ -81,8 +81,8 @@ class TemplateModel {
 		return todos(filter).map(it -> new TodoDto(it.getId(), it.getTitle(), it.isCompleted())).toList();
 	}
 
-	TodoFoot prepareReferenceData(Optional<String> filter) {
-		return new TodoFoot(todos.findByCompleted(false, DEFAULT_SORT).toList().size(),
+	Foot createForm(Optional<String> filter) {
+		return new Foot(todos.findByCompleted(false, DEFAULT_SORT).toList().size(),
 				todos.findAll(DEFAULT_SORT).toList().size(), filter);
 	}
 
@@ -98,15 +98,15 @@ class TemplateModel {
 		};
 	}
 
-	public class TodoForm {
+	public class Form {
 		@NotBlank String title;
 		String action;
 
-		TodoForm(String title) {
+		Form(String title) {
 			this.title = title;
 		}
 
-		public TodoForm() {
+		public Form() {
 			this("");
 		}
 
@@ -131,12 +131,12 @@ class TemplateModel {
 		}
 	}
 
-	public TodosPage preparePage(Optional<String> filter) {
-		return new TodosPage(new TodosDto(prepareTodos(filter), null), prepareReferenceData(filter), new TodoForm());
+	public Page preparePage(Optional<String> filter) {
+		return new Page(new TodosDto(prepareTodos(filter), null), createForm(filter), new Form());
 	}
 
 	@JStache(path = "index")
-	public record TodosPage(TodosDto todos, TodoFoot foot, TodoForm form) {
+	public record Page(TodosDto todos, Foot foot, Form form) {
 	}
 
 	@JStache(path = "todo")
@@ -147,7 +147,7 @@ class TemplateModel {
 	}
 
 	@JStache(path = "foot")
-	public record TodoFoot(int numberOfIncomplete, int numberOfTodos, Optional<String> filter) {
+	public record Foot(int numberOfIncomplete, int numberOfTodos, Optional<String> filter) {
 		boolean filterAll() {
 			return filter.isEmpty() || filter.get().isEmpty();
 		}
@@ -169,18 +169,18 @@ class TemplateModel {
 	}
 
 	@JStache(path = "remove-todo")
-	public record RemoveTodoDto(UUID id) {
+	public record RemoveTodo(UUID id) {
 	}
 
 	@JStache(path = "new-todo")
-	public record NewTodoDto(String title) {
-		NewTodoDto() {
+	public record NewTodo(String title) {
+		NewTodo() {
 			this("");
 		}
 	}
 
 	@JStache(path = "update-todo")
-	public record UpdateTodoDto(TodoDto todo) {
+	public record UpdateTodo(TodoDto todo) {
 		UUID id() {
 			return todo.id();
 		}
