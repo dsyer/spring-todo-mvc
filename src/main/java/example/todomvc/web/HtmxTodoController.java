@@ -54,9 +54,9 @@ class HtmxTodoController {
 	}
 
 	@GetMapping("/")
-	List<View> htmxIndex(@RequestParam Optional<String> filter) {
-		return List.of(JStachioModelView.of(new TodosDto(template.prepareForm(filter), "true")),
-				JStachioModelView.of(template.createFoot(filter)));
+	List<? extends View> htmxIndex(@RequestParam Optional<String> filter) {
+		return views(new TodosDto(template.prepareForm(filter), "true"),
+				template.createFoot(filter));
 	}
 
 	/**
@@ -70,45 +70,49 @@ class HtmxTodoController {
 	 * @return
 	 */
 	@PostMapping("/")
-	List<View> htmxCreateTodo(@Valid Form form, @RequestParam Optional<String> filter) {
+	List<? extends View> htmxCreateTodo(@Valid Form form, @RequestParam Optional<String> filter) {
 
 		TodoDto todo = template.save(form);
 
-		return List.of(JStachioModelView.of(new NewTodo()),
-				JStachioModelView.of(new TodosDto(Arrays.asList(todo), "beforeend")),
-				JStachioModelView.of(template.createFoot(filter)));
+		return views(new NewTodo(),
+				new TodosDto(Arrays.asList(todo), "beforeend"),
+				template.createFoot(filter));
 	}
 
 	@PutMapping("/{id}/toggle")
-	List<View> htmxToggleCompletion(@PathVariable UUID id, @RequestParam Optional<String> filter) {
+	List<? extends View> htmxToggleCompletion(@PathVariable UUID id, @RequestParam Optional<String> filter) {
 
 		Todo todo = template.find(id);
 		TodoDto result = template.save(todo.toggleCompletion(), filter);
 
-		List<View> list = new ArrayList<>(filter
+		Object model = filter
 				.map(it -> it.equals("active") && todo.isCompleted() || it.equals("inactive") && !todo.isCompleted()
-						? List.of(JStachioModelView.of(new RemoveTodo(id)))
-						: List.of(JStachioModelView.of(new UpdateTodo(result))))
-				.orElse(List.of(JStachioModelView.of(new UpdateTodo(result)))));
-		list.add(JStachioModelView.of(template.createFoot(filter)));
-		return list;
+						? new RemoveTodo(id)
+						: new UpdateTodo(result))
+				.orElse(new UpdateTodo(result));
+		return views(model, template.createFoot(filter));
 	}
 
 	@DeleteMapping("/{id}")
-	List<View> htmxDeleteTodo(@PathVariable UUID id, @RequestParam Optional<String> filter) {
+	List<? extends View> htmxDeleteTodo(@PathVariable UUID id, @RequestParam Optional<String> filter) {
 
 		Todo todo = template.find(id);
 		template.delete(todo);
 
-		return List.of(JStachioModelView.of(new RemoveTodo(id)),
-				JStachioModelView.of(template.createFoot(filter)));
+		return views(new RemoveTodo(id),
+				template.createFoot(filter));
 	}
 
 	@DeleteMapping("/completed")
-	List<View> htmxDeleteCompletedTodos(@RequestParam Optional<String> filter) {
+	List<? extends View> htmxDeleteCompletedTodos(@RequestParam Optional<String> filter) {
 
 		template.deleteCompletedTodos();
 
 		return htmxIndex(filter);
 	}
+
+	private static List<? extends View> views(Object... models) {
+		return Arrays.stream(models).map(JStachioModelView::of).toList();
+	}
+
 }
