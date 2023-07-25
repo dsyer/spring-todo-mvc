@@ -70,8 +70,7 @@ class HtmxTodoController {
 	 * @return
 	 */
 	@PostMapping("/")
-	List<View> htmxCreateTodo(@Valid @ModelAttribute("form") Form form,
-			@RequestParam Optional<String> filter) {
+	List<View> htmxCreateTodo(@Valid Form form, @RequestParam Optional<String> filter) {
 
 		template.saveForm(form);
 

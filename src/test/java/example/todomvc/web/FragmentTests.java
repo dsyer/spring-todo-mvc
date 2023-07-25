@@ -36,6 +36,7 @@ public class FragmentTests {
 		JStachio.render(foot, out);
 		System.err.println(out.toString());
 		assertThat(out.toString()).contains("hx-swap-oob");
+		assertThat(out.toString()).contains("12");
 	}
 	
 	@Test
