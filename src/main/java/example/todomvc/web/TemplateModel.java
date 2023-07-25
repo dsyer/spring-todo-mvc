@@ -15,7 +15,7 @@
  */
 package example.todomvc.web;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -27,6 +27,7 @@ import org.springframework.ui.Model;
 
 import example.todomvc.Todo;
 import example.todomvc.Todos;
+import io.jstach.jstache.JStache;
 import jakarta.validation.constraints.NotBlank;
 
 /**
@@ -46,71 +47,43 @@ class TemplateModel {
 		this.todos = todos;
 	}
 
-	void prepareForm(Model model, Optional<String> filter) {
-
-		model.addAttribute("form", new TodoForm(""));
-
-		prepareTodos(model, filter);
+	List<TodoDto> prepareForm(Optional<String> filter) {
+		return prepareTodos(filter);
 	}
 
 	TodoDto save(TodoForm form) {
-		return new TodoDto(todos.save(new Todo(form.title())));
+		return new TodoDto(todos.save(new Todo(form.getTitle())));
 	}
 
 	Todo save(Todo todo) {
 		return todos.save(todo);
 	}
 
-	TodoDto save(Todo todo, Model model, Optional<String> filter) {
+	TodoDto save(Todo todo, Optional<String> filter) {
 		var result = new TodoDto(save(todo));
-		prepareReferenceData(model, filter);
-		model.addAttribute("todo", result);
-
 		return result;
 	}
 
-	void saveForm(TodoForm form, Model model, Optional<String> filter) {
-
-		var todo = save(form);
-
-		model.addAttribute("todos", Arrays.asList(todo));
-		model.addAttribute("todo", todo);
-		prepareReferenceData(model, filter);
+	void saveForm(TodoForm form) {
+		save(form);
 	}
 
-	void delete(Todo todo) {
+	TodoDto delete(Todo todo) {
 		todos.delete(todo);
-	}
-
-	void delete(Todo todo, Model model, Optional<String> filter) {
-		todos.delete(todo);
-		prepareReferenceData(todo, model, filter);
+		return new TodoDto(todo);
 	}
 
 	void deleteCompletedTodos() {
 		todos.findByCompleted(true, Sort.unsorted()).forEach(todos::delete);
 	}
 
-	void prepareTodos(Model model, Optional<String> filter) {
-
-		model.addAttribute("todos",
-				todos(filter).map(it -> new TodoDto(it.getId(), it.getTitle(), it.isCompleted())).toList());
-
-		prepareReferenceData(model, filter);
+	List<TodoDto> prepareTodos(Optional<String> filter) {
+		return todos(filter).map(it -> new TodoDto(it.getId(), it.getTitle(), it.isCompleted())).toList();
 	}
 
-	void prepareReferenceData(Todo todo, Model model, Optional<String> filter) {
-
-		model.addAttribute("todo", new TodoDto(todo.getId(), todo.getTitle(), todo.isCompleted()));
-
-		prepareReferenceData(model, filter);
-	}
-
-	void prepareReferenceData(Model model, Optional<String> filter) {
-
-		model.addAttribute("filter", filter.orElse(""));
-		model.addAttribute("numberOfIncomplete", todos.findByCompleted(false, DEFAULT_SORT).toList().size());
-		model.addAttribute("numberOfTodos", todos.findAll(DEFAULT_SORT).toList().size());
+	TodoFoot prepareReferenceData(Optional<String> filter) {
+		return new TodoFoot(todos.findByCompleted(false, DEFAULT_SORT).toList().size(),
+				todos.findAll(DEFAULT_SORT).toList().size(), filter);
 	}
 
 	private Streamable<Todo> todos(Optional<String> filter) {
@@ -119,22 +92,105 @@ class TemplateModel {
 		var defaulted = filter.orElse("");
 
 		return switch (defaulted) {
-		case "active" -> todos.findByCompleted(false, DEFAULT_SORT);
-		case "completed" -> todos.findByCompleted(true, DEFAULT_SORT);
-		default -> todos.findAll(DEFAULT_SORT);
+			case "active" -> todos.findByCompleted(false, DEFAULT_SORT);
+			case "completed" -> todos.findByCompleted(true, DEFAULT_SORT);
+			default -> todos.findAll(DEFAULT_SORT);
 		};
 	}
 
-	public record TodoForm(@NotBlank String title) {
+	public class TodoForm {
+		@NotBlank String title;
+		String action;
+
+		TodoForm(String title) {
+			this.title = title;
+		}
+
+		public TodoForm() {
+			this("");
+		}
 
 		Todo toEntity() {
 			return new Todo(title);
 		}
+
+		public String getTitle() {
+			return title;
+		}
+
+		public void setTitle(String title) {
+			this.title = title;
+		}
+
+		public String getAction() {
+			return action;
+		}
+
+		public void setAction(String action) {
+			this.action = action;
+		}
 	}
 
+	public TodosPage preparePage(Optional<String> filter) {
+		return new TodosPage(new TodosDto(prepareTodos(filter), null), prepareReferenceData(filter), new TodoForm());
+	}
+
+	@JStache(path = "index")
+	public record TodosPage(TodosDto todos, TodoFoot foot, TodoForm form) {
+	}
+
+	@JStache(path = "todo")
 	public record TodoDto(UUID id, String title, boolean completed) {
 		TodoDto(Todo todo) {
 			this(todo.getId(), todo.getTitle(), todo.isCompleted());
+		}
+	}
+
+	@JStache(path = "foot")
+	public record TodoFoot(int numberOfIncomplete, int numberOfTodos, Optional<String> filter) {
+		boolean filterAll() {
+			return filter.isEmpty() || filter.get().isEmpty();
+		}
+
+		boolean filterActive() {
+			return filter.isPresent() && "active".equals(filter.get());
+		}
+
+		boolean filterCompleted() {
+			return filter.isPresent() && "completed".equals(filter.get());
+		}
+	}
+
+	@JStache(path = "todos")
+	public record TodosDto(List<TodoDto> todos, String action) {
+		TodosDto(List<TodoDto> todos) {
+			this(todos, null);
+		}
+	}
+
+	@JStache(path = "remove-todo")
+	public record RemoveTodoDto(UUID id) {
+	}
+
+	@JStache(path = "new-todo")
+	public record NewTodoDto(String title) {
+		NewTodoDto() {
+			this("");
+		}
+	}
+
+	@JStache(path = "update-todo")
+	public record UpdateTodoDto(TodoDto todo) {
+		UUID id() {
+			return todo.id();
+		}
+
+		String title() {
+			return todo.title();
+		}
+
+		boolean completed() {
+			return todo.completed();
 		}
 	}
 

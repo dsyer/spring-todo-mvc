@@ -17,6 +17,7 @@
 
 	<properties>
 		<java.version>17</java.version>
+		<jstachio.version>1.2.1</jstachio.version>
 	</properties>
 
 	<profiles>
@@ -34,8 +35,9 @@
 			<artifactId>spring-data-keyvalue</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-freemarker</artifactId>
+			<groupId>io.jstach</groupId>
+			<artifactId>jstachio-spring-boot-starter-webmvc</artifactId>
+			<version>${jstachio.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -82,22 +84,21 @@
 
 	<build>
 
-		<defaultGoal>spring-boot:run</defaultGoal>
-
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
-					<profiles>
-						<profile>${spring.profiles.active}</profile>
-					</profiles>
-					<excludes>
-						<exclude>
-							<groupId>org.projectlombok</groupId>
-							<artifactId>lombok</artifactId>
-						</exclude>
-					</excludes>
+					<annotationProcessorPaths>
+						<annotationProcessorPath>
+							<groupId>io.jstach</groupId>
+							<artifactId>jstachio-apt</artifactId>
+							<version>${jstachio.version}</version>
+						</annotationProcessorPath>
+					</annotationProcessorPaths>
 				</configuration>
 			</plugin>
 		</plugins>

@@ -4,7 +4,6 @@ import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -14,13 +13,15 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.servlet.View;
 
 import example.todomvc.Todo;
 import example.todomvc.web.TemplateModel.TodoForm;
+import io.jstach.opt.spring.webmvc.JStachioModelView;
 import jakarta.validation.Valid;
 
 /**
- * Spring MVC controller to render a traditional Thymeleaf template. Assumes full HTTP requests and rendering.
+ * Spring MVC controller to render a Jstachio template. Assumes full HTTP requests and rendering.
  *
  * @author Oliver Drotbohm
  */
@@ -35,11 +36,8 @@ class TodoController {
 	}
 
 	@GetMapping
-	String index(@RequestParam Optional<String> filter, Model model) {
-
-		template.prepareForm(model, filter);
-
-		return "index";
+	View index(@RequestParam Optional<String> filter) {
+		return JStachioModelView.of(template.preparePage(filter));
 	}
 
 	@PostMapping

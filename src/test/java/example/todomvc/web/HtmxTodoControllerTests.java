@@ -45,7 +45,9 @@ class HtmxTodoControllerTests {
 
     @Test
     void testDelete() throws Exception {
-        this.webClient.delete().uri("/{id}", todo.getId()).header("HX-Request", "true").exchange().expectStatus()
+        this.webClient.delete().uri("/{id}", todo.getId()).header("HX-Request", "true")
+                .exchange()
+                .expectStatus()
                 .isOk().expectBody(String.class).value(value -> {
                     assertThat(value).contains("id=\"todo-" + todo.getId() + "\"");
                     assertThat(value).contains("hx-swap-oob=\"true\"");

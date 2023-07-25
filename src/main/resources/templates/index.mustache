@@ -12,15 +12,15 @@
 		<section class="todoapp">
 			<header class="header">
 				<h1>todos</h1>
-				<#include "new-todo.ftlh">
+				{{#form}}{{>new-todo}}{{/form}}
 			</header>
 			<!-- This section should be hidden by default and shown when there are todos -->
 			<section class="main">
 				<input id="toggle-all" class="toggle-all" type="checkbox">
 				<label for="toggle-all">Mark all as complete</label>
-				<#include "todos.ftlh">
+				{{#todos}}{{>todos}}{{/todos}}
 			</section>
-			<#include "foot.ftlh">
+			{{#foot}}{{>foot}}{{/foot}}
 		</section>
 		<footer class="info">
 			<p>Double-click to edit a todo</p>

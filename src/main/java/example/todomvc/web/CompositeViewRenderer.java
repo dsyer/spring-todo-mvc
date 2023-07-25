@@ -1,5 +1,6 @@
 package example.todomvc.web;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -22,6 +23,7 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.View;
 import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -53,6 +55,10 @@ public class CompositeViewRenderer implements HandlerMethodReturnValueHandler, W
 					.isAssignableFrom(ResolvableType.forMethodParameter(returnType).getGeneric().resolve())) {
 				return true;
 			}
+			if (View.class
+					.isAssignableFrom(ResolvableType.forMethodParameter(returnType).getGeneric().resolve())) {
+				return true;
+			}
 		}
 		return false;
 	}
@@ -71,9 +77,21 @@ public class CompositeViewRenderer implements HandlerMethodReturnValueHandler, W
 		MediaType type = methodAnnotation.length > 0 ? MediaType.valueOf(methodAnnotation[0]) : MediaType.TEXT_HTML;
 		var response = webRequest.getNativeResponse(HttpServletResponse.class);
 		response.setContentType(type.toString());
-		@SuppressWarnings("unchecked")
-		List<ModelAndView> renderings = resolve(response, (List<ModelAndView>) returnValue);
+		List<ModelAndView> renderings = resolve(response, extractViews(returnValue));
 		mavContainer.setView(new CompositeView(renderings));
+	}
+
+	private List<ModelAndView> extractViews(Object returnValue) {
+		List<?> list = (List<?>) returnValue;
+		List<ModelAndView> renderings = new ArrayList<>();
+		for (Object element : list) {
+			if (element instanceof ModelAndView) {
+				renderings.add((ModelAndView) element);
+			} else {
+				renderings.add(new ModelAndView((View) element));
+			}
+		}
+		return renderings;
 	}
 
 	private List<ModelAndView> resolve(HttpServletResponse response, List<ModelAndView> renderings) {
@@ -109,10 +127,12 @@ public class CompositeViewRenderer implements HandlerMethodReturnValueHandler, W
 		@Override
 		public void render(@Nullable Map<String, ?> model, HttpServletRequest request, HttpServletResponse response)
 				throws Exception {
+			ContentCachingResponseWrapper wrapper = new ContentCachingResponseWrapper(response);
 			for (ModelAndView rendering : renderings) {
-				rendering.getView().render(rendering.getModel(), request, response);
-				response.getWriter().write("\n\n");
+				rendering.getView().render(rendering.getModel(), request, wrapper);
+				wrapper.getWriter().write("\n\n");
 			}
+			wrapper.copyBodyToResponse();
 		}
 
 	}

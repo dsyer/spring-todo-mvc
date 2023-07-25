@@ -15,15 +15,25 @@
  */
 package example.todomvc;
 
+import java.time.LocalDate;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.map.repository.config.EnableMapRepositories;
+
+import io.jstach.jstache.JStacheFlags;
+import io.jstach.jstache.JStacheFlags.Flag;
+import io.jstach.jstache.JStacheFormatterTypes;
+import io.jstach.jstache.JStachePath;
 
 /**
  * @author Oliver Drotbohm
  */
 @SpringBootApplication
 @EnableMapRepositories
+@JStachePath(prefix = "templates/", suffix = ".mustache")
+@JStacheFlags(flags = Flag.DEBUG)
+@JStacheFormatterTypes(types = LocalDate.class)
 public class Application {
 
 	public static void main(String[] args) throws Exception {

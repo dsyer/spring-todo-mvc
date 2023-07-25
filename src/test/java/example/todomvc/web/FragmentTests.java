@@ -2,40 +2,47 @@ package example.todomvc.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.StringWriter;
 import java.util.Arrays;
-import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import example.todomvc.web.TemplateModel.RemoveTodoDto;
 import example.todomvc.web.TemplateModel.TodoDto;
-import freemarker.template.Configuration;
+import example.todomvc.web.TemplateModel.TodoFoot;
+import example.todomvc.web.TemplateModel.TodosDto;
+import example.todomvc.web.TemplateModel.UpdateTodoDto;
+import io.jstach.jstachio.JStachio;
 
 @SpringBootTest
 public class FragmentTests {
 
-	@Autowired
-	private Configuration configuration;
-
 	@Test
 	void testIndex() throws Exception {
 		TodoDto todo = new TodoDto(UUID.randomUUID(), "Something", false);
-		Map<String,Object> model = Map.of("todos", Arrays.asList(todo), "action", "");
-		StringWriter out = new StringWriter();
-		configuration.getTemplate("todos.ftlh").process(model, out);
+		TodosDto todos = new TodosDto(Arrays.asList(todo));
+		StringBuilder out = new StringBuilder();
+		JStachio.render(todos, out);
 		assertThat(out.toString()).contains(todo.id().toString());
 		assertThat(out.toString()).doesNotContain("hx-swap-oob");
 	}
 	
 	@Test
+	void testFoot() throws Exception {
+		TodoFoot foot = new TodoFoot(12, 3, Optional.of("active"));
+		StringBuilder out = new StringBuilder();
+		JStachio.render(foot, out);
+		System.err.println(out.toString());
+		assertThat(out.toString()).contains("hx-swap-oob");
+	}
+	
+	@Test
 	void testTodo() throws Exception {
 		TodoDto todo = new TodoDto(UUID.randomUUID(), "Something", false);
-		Map<String,Object> model = Map.of("todo", todo, "action", "");
-		StringWriter out = new StringWriter();
-		configuration.getTemplate("todo.ftlh").process(model, out);
+		StringBuilder out = new StringBuilder();
+		JStachio.render(todo, out);
 		assertThat(out.toString()).contains(todo.id().toString());
 		assertThat(out.toString()).doesNotContain("hx-swap-oob");
 	}
@@ -43,9 +50,8 @@ public class FragmentTests {
 	@Test
 	void testUpdate() throws Exception {
 		TodoDto todo = new TodoDto(UUID.randomUUID(), "Something", false);
-		Map<String,Object> model = Map.of("todo", todo);
-		StringWriter out = new StringWriter();
-		configuration.getTemplate("update-todo.ftlh").process(model, out);
+		StringBuilder out = new StringBuilder();
+		JStachio.render(new UpdateTodoDto(todo), out);
 		assertThat(out.toString()).contains(todo.id().toString());
 		assertThat(out.toString()).contains("hx-swap-oob=\"true\"");
 	}
@@ -53,9 +59,8 @@ public class FragmentTests {
 	@Test
 	void testRemove() throws Exception {
 		TodoDto todo = new TodoDto(UUID.randomUUID(), "Something", false);
-		Map<String,Object> model = Map.of("todo", todo);
-		StringWriter out = new StringWriter();
-		configuration.getTemplate("remove-todo.ftlh").process(model, out);
+		StringBuilder out = new StringBuilder();
+		JStachio.render(new RemoveTodoDto(todo.id()), out);
 		// System.err.println(out.toString());
 		assertThat(out.toString()).contains(todo.id().toString());
 		assertThat(out.toString()).contains("hx-swap-oob=\"true\"");
