@@ -135,7 +135,7 @@ class TemplateModel {
 	public record Page(List<TodoDto> todos, String action, Foot foot, Form form) {
 	}
 
-	@JStache(path = "todo")
+	@JStache(path = "index#todos")
 	public record TodoDto(UUID id, String title, boolean completed) {
 		TodoDto(Todo todo) {
 			this(todo.getId(), todo.getTitle(), todo.isCompleted());
