@@ -128,11 +128,11 @@ class TemplateModel {
 	}
 
 	public Page preparePage(Optional<String> filter) {
-		return new Page(new TodosDto(prepareTodos(filter), null), createFoot(filter), new Form());
+		return new Page(prepareTodos(filter), null, createFoot(filter), new Form());
 	}
 
 	@JStache(path = "index")
-	public record Page(TodosDto todos, Foot foot, Form form) {
+	public record Page(List<TodoDto> todos, String action, Foot foot, Form form) {
 	}
 
 	@JStache(path = "todo")
@@ -157,7 +157,7 @@ class TemplateModel {
 		}
 	}
 
-	@JStache(path = "index#todos")
+	@JStache(path = "index#hasTodos")
 	public record TodosDto(List<TodoDto> todos, String action) {
 		TodosDto(List<TodoDto> todos) {
 			this(todos, null);
