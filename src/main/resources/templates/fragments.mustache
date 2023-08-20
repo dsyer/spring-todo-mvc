@@ -2,5 +2,5 @@
 <li id="todo-{{id}}" hx-swap-oob="true"></li>
 {{/remove}}
 {{#update}}
-{{<todo}}{{$action}}hx-swap-oob="true"{{/action}}{{/todo}}
+{{<index#todos}}{{$action}}hx-swap-oob="true"{{/action}}{{/index#todos}}
 {{/update}}
