@@ -38,19 +38,18 @@ import example.todomvc.web.TemplateModel.TodoForm;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 
-@Profile("htmx")
+@Profile("unpoly")
 @Controller
 @RequiredArgsConstructor
-@RequestMapping(headers = "HX-Request=true")
-class HtmxTodoController {
+@RequestMapping(headers = "X-Up-Context")
+class UnpolyTodoController {
 
 	private final TemplateModel template;
 
 	@GetMapping("/")
-	Flux<Rendering> htmxIndex(Model model, @RequestParam Optional<String> filter) {
+	Flux<Rendering> upIndex(Model model, @RequestParam Optional<String> filter) {
 
 		template.prepareForm(model, filter);
-		model.addAttribute("action", "true");
 
 		return Flux.just(Rendering.view("index :: todos").model(model.asMap()).build(),
 				Rendering.view("index :: foot").model(model.asMap()).build());
@@ -58,7 +57,7 @@ class HtmxTodoController {
 
 	/**
 	 * An optimized variant of {@link #createTodo(TodoItemFormData)}. We perform the
-	 * normal insert and then return two {@link HtmxPartials} for the parts of the
+	 * normal insert and then return two {@link upPartials} for the parts of the
 	 * page that need updates by rendering the corresponding fragments of the
 	 * template.
 	 *
@@ -67,12 +66,11 @@ class HtmxTodoController {
 	 * @return
 	 */
 	@PostMapping("/")
-	Flux<Rendering> htmxCreateTodo(@Valid @ModelAttribute("form") TodoForm form, @RequestParam Optional<String> filter,
+	Flux<Rendering> upCreateTodo(@Valid @ModelAttribute("form") TodoForm form, @RequestParam Optional<String> filter,
 			Model model) {
 
 		template.saveForm(form, model, filter);
 		model.addAttribute("form", new TodoForm(""));
-		model.addAttribute("action", "beforeend");
 
 		return Flux.just(Rendering.view("index :: new-todo").model(model.asMap()).build(),
 				Rendering.view("index :: todos").model(model.asMap()).build(),
@@ -80,7 +78,7 @@ class HtmxTodoController {
 	}
 
 	@PutMapping("/{id}/toggle")
-	Flux<Rendering> htmxToggleCompletion(@PathVariable UUID id, @RequestParam Optional<String> filter, Model model) {
+	Flux<Rendering> upToggleCompletion(@PathVariable UUID id, @RequestParam Optional<String> filter, Model model) {
 
 		Todo todo = template.find(id);
 		final Todo result = template.save(todo.toggleCompletion(), model, filter);
@@ -95,7 +93,7 @@ class HtmxTodoController {
 	}
 
 	@DeleteMapping("/{id}")
-	Flux<Rendering> htmxDeleteTodo(@PathVariable UUID id, @RequestParam Optional<String> filter, Model model) {
+	Flux<Rendering> upDeleteTodo(@PathVariable UUID id, @RequestParam Optional<String> filter, Model model) {
 
 		Todo todo = template.find(id);
 		template.delete(todo, model, filter);
@@ -106,10 +104,10 @@ class HtmxTodoController {
 	}
 
 	@DeleteMapping("/completed")
-	Flux<Rendering> htmxDeleteCompletedTodos(@RequestParam Optional<String> filter, Model model) {
+	Flux<Rendering> upDeleteCompletedTodos(@RequestParam Optional<String> filter, Model model) {
 
 		template.deleteCompletedTodos();
 
-		return htmxIndex(model, filter);
+		return upIndex(model, filter);
 	}
 }

@@ -1,6 +1,7 @@
 package example.todomvc.web;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import jakarta.validation.Valid;
 
@@ -50,8 +51,9 @@ class TodoController {
 	}
 
 	@PutMapping("/{id}/toggle")
-	String toggleCompletion(@PathVariable("id") Todo todo) {
+	String toggleCompletion(@PathVariable UUID id) {
 
+		Todo todo = template.find(id);
 		if (todo == null) {
 			throw new HttpClientErrorException(HttpStatus.NOT_FOUND);
 		}
@@ -61,9 +63,10 @@ class TodoController {
 		return "redirect:/";
 	}
 
-	@DeleteMapping("/{todo}")
-	String deleteTodo(@PathVariable Todo todo) {
+	@DeleteMapping("/{id}")
+	String deleteTodo(@PathVariable UUID id) {
 
+		Todo todo = template.find(id);
 		template.delete(todo);
 
 		return "redirect:/";
