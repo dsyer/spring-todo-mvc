@@ -1,7 +1,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
 
 
-<li th:fragment="todo(todo,action)" th:attrappend="id=${'todo-' + todo.id}" th:class="${todo.completed ? 'completed' : ''}">
+<li th:fragment="todo(todo)" th:attrappend="id=${'todo-' + todo.id}" th:class="${todo.completed ? 'completed' : ''}">
 	<div class="view">
 		<form th:method="put" th:action="@{/{id}/toggle(id=${todo.id},filter=${filter})}" th:attr="up-target=${'#todo-' + todo.id}">
 			<input class="toggle" type="checkbox" th:checked="${todo.completed}" onchange="this.form.requestSubmit()"></index>
@@ -15,8 +15,14 @@
 	<input class="edit" value="Create a TodoMVC template"></input>
 </li>
 
-<th:block th:fragment="update-todo(todo)" th:insert="~{fragments :: todo(${todo},'true')}"></th:block>
+<th:block th:fragment="update-todo(todo)" th:insert="~{fragments :: todo(${todo})}"></th:block>
 
 <li th:fragment="remove-todo(todo)" th:attr="id=${'todo-' + todo.id}"></li>
+
+<div up-main="overlay" th:fragment="toggle-all">
+	<form th:method="delete" th:action="@{/completed(filter=${filter})}" up-target="#todos,#foot" up-layer="parent">
+		<button type="submit">OK</button>
+	</form>
+</div>
 
 </html>

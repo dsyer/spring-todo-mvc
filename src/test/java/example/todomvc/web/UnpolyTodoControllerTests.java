@@ -13,7 +13,7 @@ import example.todomvc.Todo;
 import example.todomvc.Todos;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class HtmxTodoControllerTests {
+class UnpolyTodoControllerTests {
 
     @Autowired
     private WebTestClient webClient;
@@ -32,11 +32,10 @@ class HtmxTodoControllerTests {
 
     @Test
     void testToggle() throws Exception {
-        this.webClient.put().uri("/{id}/toggle", todo.getId()).header("HX-Request", "true").exchange().expectStatus()
+        this.webClient.put().uri("/{id}/toggle", todo.getId()).header("X-Up-Context", "true").exchange().expectStatus()
                 .isOk().expectBody(String.class).value(value -> {
                     assertThat(value).contains("<li");
                     assertThat(value).doesNotContain("<li><li");
-                    assertThat(value).contains("hx-swap-oob=\"true\"");
                     assertThat(value).contains("Incomplete");
                     assertThat(value).contains("class=\"completed\"");
                     assertThat(value).contains("id=\"foot\"");
@@ -45,10 +44,9 @@ class HtmxTodoControllerTests {
 
     @Test
     void testDelete() throws Exception {
-        this.webClient.delete().uri("/{id}", todo.getId()).header("HX-Request", "true").exchange().expectStatus()
+        this.webClient.delete().uri("/{id}", todo.getId()).header("X-Up-Context", "{}").exchange().expectStatus()
                 .isOk().expectBody(String.class).value(value -> {
                     assertThat(value).contains("id=\"todo-" + todo.getId() + "\"");
-                    assertThat(value).contains("<li hx-swap-oob=\"true\"");
                     assertThat(value).contains("></li>"); // empty list item
                     assertThat(value).contains("id=\"foot\"");
                 });
@@ -57,14 +55,13 @@ class HtmxTodoControllerTests {
     @Test
     void testCreate() throws Exception {
         this.webClient.post().uri("/").bodyValue("title=Foo")
-                .header("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8").header("HX-Request", "true")
+                .header("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8").header("X-Up-Context", "{}")
                 .exchange()
                 .expectStatus()
                 .isOk().expectBody(String.class).value(value -> {
                     assertThat(value).contains("<form id=\"new-todo\"");
-                    assertThat(value).doesNotContain("htmx-swap-oob");
                     assertThat(value).contains("value=\"\"");
-                    assertThat(value).contains("<ul id=\"todos\" class=\"todo-list\" hx-swap-oob=\"beforeend\">");
+                    assertThat(value).contains("<ul id=\"todos\" class=\"todo-list\">");
                     assertThat(value).contains("<label>Foo</label>");
                     assertThat(value).contains("id=\"foot\"");
                 });
@@ -73,7 +70,7 @@ class HtmxTodoControllerTests {
 
     @Test
     void testIndex() throws Exception {
-        this.webClient.get().uri("/").header("HX-Request", "true").exchange().expectStatus().isOk()
+        this.webClient.get().uri("/").header("X-Up-Context", "true").exchange().expectStatus().isOk()
                 .expectBody(String.class)
                 .value(value -> assertThat(value).contains("Completed"));
     }

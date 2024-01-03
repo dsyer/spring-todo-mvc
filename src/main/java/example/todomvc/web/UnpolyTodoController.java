@@ -55,6 +55,11 @@ class UnpolyTodoController {
 				Rendering.view("index :: foot").model(model.asMap()).build());
 	}
 
+	@GetMapping("/toggles")
+	Flux<Rendering> toggles() {
+		return Flux.just(Rendering.view("fragments :: toggle-all").build());
+	}
+
 	/**
 	 * An optimized variant of {@link #createTodo(TodoItemFormData)}. We perform the
 	 * normal insert and then return two {@link upPartials} for the parts of the
