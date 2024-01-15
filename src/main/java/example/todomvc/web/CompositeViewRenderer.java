@@ -76,11 +76,10 @@ public class CompositeViewRenderer implements HandlerMethodReturnValueHandler, W
 				.getMethodAnnotation(RequestMapping.class).produces();
 		MediaType type = methodAnnotation.length > 0 ? MediaType.valueOf(methodAnnotation[0]) : MediaType.TEXT_HTML;
 		var response = webRequest.getNativeResponse(HttpServletResponse.class);
-		var request = webRequest.getNativeRequest(HttpServletRequest.class);
 		response.setContentType(type.toString());
 		@SuppressWarnings("unchecked")
 		List<ModelAndView> renderings = resolve(response, (List<ModelAndView>) returnValue);
-		mavContainer.setView(new CompositeView(renderings, request, response));
+		mavContainer.setView(new CompositeView(renderings));
 	}
 
 	private List<ModelAndView> resolve(HttpServletResponse response, List<ModelAndView> renderings) {
@@ -111,13 +110,9 @@ public class CompositeViewRenderer implements HandlerMethodReturnValueHandler, W
 	static class CompositeView implements View {
 
 		private List<ModelAndView> renderings;
-		private HttpServletRequest request;
-		private HttpServletResponse response;
 
-		public CompositeView(List<ModelAndView> renderings, HttpServletRequest request, HttpServletResponse response) {
+		public CompositeView(List<ModelAndView> renderings) {
 			this.renderings = renderings;
-			this.request = request;
-			this.response = response;
 		}
 
 		@Override
