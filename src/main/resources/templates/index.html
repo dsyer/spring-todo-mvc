@@ -55,11 +55,11 @@
 						<a th:class="${filter == 'active' ? 'selected' : ''}" href="?filter=active" hx-swap="none">Active</a>
 					</li>
 					<li>
-						<a th:class="${filter == 'completed' ? 'selected' : ''}"href="?filter=completed" hx-swap="none">Completed</a>
+						<a th:class="${filter == 'completed' ? 'selected' : ''}" href="?filter=completed" hx-swap="none">Completed</a>
 					</li>
 				</ul>
 				<!-- Hidden if no completed items are left ↓ -->
-				<form th:method="delete" th:action="@{/completed(filter=${filter})}" hx-swap="none">
+				<form th:method="delete" th:action="@{/completed(filter=${filter})}" hx-swap="none" hx-push-url="/">
 					<button class="clear-completed" type="submit">Clear completed</button>
 				</form>
 			</footer>
