@@ -79,7 +79,7 @@ class HtmxTodoController {
 				new ModelAndView("index :: foot", model.asMap()));
 	}
 
-	@PutMapping("/{id}/toggle")
+	@GetMapping("/{id}/toggle")
 	List<ModelAndView> htmxToggleCompletion(@PathVariable UUID id, @RequestParam Optional<String> filter, Model model) {
 
 		Todo todo = template.find(id);

@@ -49,7 +49,7 @@ class TodoController {
 		return "redirect:/";
 	}
 
-	@PutMapping("/{id}/toggle")
+	@GetMapping("/{id}/toggle")
 	String toggleCompletion(@PathVariable("id") Todo todo) {
 
 		if (todo == null) {

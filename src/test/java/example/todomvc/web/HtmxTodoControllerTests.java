@@ -32,7 +32,7 @@ class HtmxTodoControllerTests {
 
     @Test
     void testToggle() throws Exception {
-        this.webClient.put().uri("/{id}/toggle", todo.getId()).header("HX-Request", "true").exchange().expectStatus()
+        this.webClient.get().uri("/{id}/toggle", todo.getId()).header("HX-Request", "true").exchange().expectStatus()
                 .isOk().expectBody(String.class).value(value -> {
                     assertThat(value).contains("<li");
                     assertThat(value).doesNotContain("<li><li");
